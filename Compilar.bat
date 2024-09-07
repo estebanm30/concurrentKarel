@@ -1,1 +1,1 @@
-javac -d . -cp ".;KarelJRobot.jar" %1
+javac -d . -cp ".;KarelJRobot.jar" ConcurrentKarel.java
