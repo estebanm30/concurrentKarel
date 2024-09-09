@@ -25,6 +25,10 @@ public class Stop {
                 this.dropPos = new int[] { 8, 8 };
                 this.maxRobots = 1;
                 break;
+            case 4:
+                this.dropPos = new int[] { 8, 8 };
+                this.maxRobots = 1;
+                break;
 
             default:
                 break;

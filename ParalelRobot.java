@@ -134,7 +134,16 @@ public class ParalelRobot extends Robot implements Runnable {
                 }
                 ConcurrentKarel.positionStopSemaphores.get(nextPos).acquire();
                 break;
-
+            case 4:
+            nextPos = this.actualPos[0] + "," + (int) (this.actualPos[1] - 1);
+            try {
+                if (ConcurrentKarel.positionStopSemaphores.get(nextPos).availablePermits() == 0) {
+                    this.wait();
+                }
+            } catch (Exception e) {
+            }
+            ConcurrentKarel.positionStopSemaphores.get(nextPos).acquire();
+            break;
             default:
                 break;
         }
@@ -165,7 +174,13 @@ public class ParalelRobot extends Robot implements Runnable {
                 }
                 ConcurrentKarel.positionStopSemaphores.get(nextPos).release();
                 break;
-
+            case 4:
+                nextPos = this.actualPos[0] + "," + this.actualPos[1];
+                if (ConcurrentKarel.positionStopSemaphores.get(nextPos).availablePermits() == this.stop.maxRobots) {
+                    this.notifyAll();
+                }
+                ConcurrentKarel.positionStopSemaphores.get(nextPos).release();
+                break;
             default:
                 break;
         }
@@ -185,7 +200,24 @@ public class ParalelRobot extends Robot implements Runnable {
         }
         try {
             enterStop();
-            if (this.stop.nStop != 0) {
+            if(this.stop.nStop == 4){
+                goTo(11, 15);
+                goTo(15, 11);
+                goTo(13, 15);
+                goTo(16, 17);
+                goTo(17, 12);
+                goTo(9, 18);
+                goTo(18, 19);
+                this.putBeeper();
+                goTo(9,19);
+                goTo(17,18);
+                goTo(16,12);
+                goTo(13,17);
+                goTo(15,15);
+                goTo(11,11);
+                goTo(10,15);
+            }
+            else if (this.stop.nStop != 0) {
                 goTo(this.stop.dropPos[0], this.stop.dropPos[1]);
                 this.putBeeper();
                 stopRoute();

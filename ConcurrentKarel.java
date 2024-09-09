@@ -94,6 +94,9 @@ public class ConcurrentKarel implements Directions {
     key = 6+ "," + 8;
     ConcurrentKarel.positionStopSemaphores.put(key, new Semaphore(1));
 
+    key = 10+ "," + 15;
+    ConcurrentKarel.positionStopSemaphores.put(key, new Semaphore(1));
+
     int currStreetPark = 7;
     int currAvenuePark = 12;
     Thread[] threadsArr = new Thread[numRobots];
