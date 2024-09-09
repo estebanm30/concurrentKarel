@@ -38,7 +38,7 @@ public class ParalelRobot extends Robot implements Runnable {
                                                                                       // avenue 10
             goToPrincipal(ConcurrentKarel.wayBackToBeepers, 100000); // Go from principal to beepers
         }
-        this.stop = ConcurrentKarel.stopsArr[4];
+        this.stop = ConcurrentKarel.stopsArr[5]; // Parking stop
         goToStop();
         goTo(7, 12);
         goTo(4, 18);
@@ -278,7 +278,7 @@ public class ParalelRobot extends Robot implements Runnable {
         this.pickBeeper();
         ConcurrentKarel.totalBeepers -= 1;
         Random rand = new Random();
-        int r = rand.nextInt(1, 4); // todo hasta 4
+        int r = rand.nextInt(1, 5); // todo hasta 4
         this.stop = ConcurrentKarel.stopsArr[r];
     }
 

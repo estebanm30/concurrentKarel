@@ -7,7 +7,7 @@ import java.util.*;
 public class ConcurrentKarel implements Directions {
   public static Map<String, Semaphore> positionSemaphores = Collections.synchronizedMap(new HashMap<>());
   public static Map<String, Semaphore> positionStopSemaphores = Collections.synchronizedMap(new HashMap<>());
-  public static Stop[] stopsArr = new Stop[5];
+  public static Stop[] stopsArr = new Stop[6];
   public static int totalBeepers = 1000;
   public static String[] wayBackToBeepers = {"North", "East","North", "West", "South", "East", "North"};
   public static int principalAvenue = 10;
@@ -55,12 +55,20 @@ public class ConcurrentKarel implements Directions {
     String[] wayToPrincipal3 = {"East"};
     Stop stop3 = new Stop(3, exitStop3, directionsStop3, wayToPrincipal3);
     stopsArr[3] = stop3;
-
+    
+    int[] exitStop4 = {10,16};
+    String[] directionsStop4 = { "West", "South", "West", "North", "East","South", "West", "South", "East", "North", "West" };
+    String[] wayToPrincipal4 = {"West"};
+    Stop stop4 = new Stop(4, exitStop4, directionsStop4, wayToPrincipal4);
+    stopsArr[4] = stop4;
+    
     int[] exitStopParking = { 2, 19 };
     String[] directionsStopPark = {  "West", "South", "West", "North", "East", "South", "West", "South", "East", "North", "West","South", "East", "North", "East", "North", "West", "South", "East", "North" };
     String[] wayToPrincipalParking = null;
     Stop stopPark = new Stop(5, exitStopParking, directionsStopPark, wayToPrincipalParking);
-    stopsArr[4] = stopPark;
+    stopsArr[5] = stopPark;
+
+  
 
     // Todo Stop 4
 
