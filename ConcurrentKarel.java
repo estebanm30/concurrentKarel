@@ -10,14 +10,18 @@ public class ConcurrentKarel implements Directions {
   public static Stop[] stopsArr = new Stop[6];
   public static int totalBeepers = 1000;
   public static String[] wayBackToBeepers = { "North", "East", "North", "West", "South", "East", "North" };
-  public static int principalAvenue = 10;
+  public static int[] principalPos = new int[] { 10, 10 };
   public static BayStop4 bayArr[] = new BayStop4[4];
+  public static int maxRobots1 = 8;
+  public static int maxRobots2 = 9;
+  public static int maxRobots3 = 1;
+  public static int maxRobots4 = 1;
   
 
   public static void main(String[] args) {
 
     /* Variables */
-    int numRobots = 10;
+    int numRobots = 15;
 
     createStops();
     /* World Setup */
@@ -25,8 +29,6 @@ public class ConcurrentKarel implements Directions {
     arr = setUpWprld(numRobots);
 
     /* Robots */
-
-    createBays();
 
     for (Thread robot : arr) {
       robot.start();
@@ -43,7 +45,7 @@ public class ConcurrentKarel implements Directions {
 
     int[] exitStop1 = { 18, 5 };
     String[] directionsStop1 = { "West", "South", "West", "North", "East" };
-    String[] wayToPrincipal1 = { "East", "South", "West", "South", "East" };
+    String[] wayToPrincipal1 = { "East", "South", "West", "South", "East", "North", "West" };
     Stop stop1 = new Stop(1, exitStop1, directionsStop1, wayToPrincipal1);
     stopsArr[1] = stop1;
 
@@ -77,10 +79,10 @@ public class ConcurrentKarel implements Directions {
   }
 
   public static void createBays() {
-    BayStop4 b1 = new BayStop4(1, new int[] { 11, 15 }, new String[] {"West", "South", "East"});
-    BayStop4 b2 = new BayStop4(2, new int[] { 15, 15 }, new String[] {"East", "South", "West", "North"});
-    BayStop4 b3 = new BayStop4(3, new int[] { 16, 12 }, new String[] {"North", "West", "South"});
-    BayStop4 b4 = new BayStop4(4, new int[] { 12, 18 }, new String[] {"South", "West", "North"});
+    BayStop4 b1 = new BayStop4(1, new int[] { 11, 15 }, new String[] { "West", "South", "East" });
+    BayStop4 b2 = new BayStop4(2, new int[] { 15, 15 }, new String[] { "East", "South", "West", "North" });
+    BayStop4 b3 = new BayStop4(3, new int[] { 16, 12 }, new String[] { "North", "West", "South" });
+    BayStop4 b4 = new BayStop4(4, new int[] { 12, 18 }, new String[] { "South", "West", "North" });
 
     bayArr[0] = b1;
     bayArr[1] = b2;
@@ -98,17 +100,42 @@ public class ConcurrentKarel implements Directions {
         ConcurrentKarel.positionSemaphores.put(key, new Semaphore(1));
       }
     }
-    key = 18 + "," + 6;
-    ConcurrentKarel.positionStopSemaphores.put(key, new Semaphore(1)); // Stop 1
+    key = stopsArr[1].posSemaphoreEntrance[0] + "," + stopsArr[1].posSemaphoreEntrance[1];
+    Semaphore sem1e = new Semaphore(maxRobots1);
+    stopsArr[1].semaphoreEntrance = sem1e;
+    ConcurrentKarel.positionStopSemaphores.put(key, sem1e); // Stop 1
+    key = stopsArr[1].posSemaphoreExit[0] + "," + stopsArr[1].posSemaphoreExit[1];
+    Semaphore sem1ex = new Semaphore(1);
+    stopsArr[1].semaphoreExit = sem1ex;
+    ConcurrentKarel.positionStopSemaphores.put(key, sem1ex); 
 
-    key = 10 + "," + 7;
-    ConcurrentKarel.positionStopSemaphores.put(key, new Semaphore(1)); // Stop 2
+    key = stopsArr[2].posSemaphoreEntrance[0] + "," + stopsArr[2].posSemaphoreEntrance[1];
+    Semaphore sem2e = new Semaphore(maxRobots2);
+    stopsArr[2].semaphoreEntrance = sem2e;
+    ConcurrentKarel.positionStopSemaphores.put(key, sem2e); // Stop 2
+    key = stopsArr[2].posSemaphoreExit[0] + "," + stopsArr[2].posSemaphoreExit[1];
+    Semaphore sem2ex = new Semaphore(1);
+    stopsArr[2].semaphoreExit = sem2ex;
+    ConcurrentKarel.positionStopSemaphores.put(key, sem2ex);
 
-    key = 6 + "," + 8;
-    ConcurrentKarel.positionStopSemaphores.put(key, new Semaphore(1)); // Stop 3
 
-    key = 10 + "," + 15;
-    ConcurrentKarel.positionStopSemaphores.put(key, new Semaphore(1)); // Stop 4
+    key = stopsArr[3].posSemaphoreEntrance[0] + "," + stopsArr[3].posSemaphoreEntrance[1];
+    Semaphore sem3e = new Semaphore(maxRobots3);
+    stopsArr[3].semaphoreEntrance = sem3e;
+    ConcurrentKarel.positionStopSemaphores.put(key, sem3e); // Stop 3
+    key = stopsArr[3].posSemaphoreExit[0] + "," + stopsArr[3].posSemaphoreExit[1];
+    Semaphore sem3ex = new Semaphore(1);
+    stopsArr[3].semaphoreExit = sem3ex;
+    ConcurrentKarel.positionStopSemaphores.put(key, sem3ex);
+
+    key = stopsArr[4].posSemaphoreEntrance[0] + "," + stopsArr[4].posSemaphoreEntrance[1];
+    Semaphore sem4e = new Semaphore(maxRobots4);
+    stopsArr[4].semaphoreEntrance = sem4e;
+    ConcurrentKarel.positionStopSemaphores.put(key, sem4e); // Stop 4
+    key = stopsArr[4].posSemaphoreExit[0] + "," + stopsArr[4].posSemaphoreExit[1];
+    Semaphore sem4ex = new Semaphore(1);
+    stopsArr[4].semaphoreExit = sem4ex;
+    ConcurrentKarel.positionStopSemaphores.put(key, sem4ex);
 
     int currStreetPark = 7;
     int currAvenuePark = 12;

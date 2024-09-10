@@ -10,6 +10,4 @@ public class BayStop4 {
         this.pos = pos;
         this.goToBay = goToBay;
     }
-
-    
 }

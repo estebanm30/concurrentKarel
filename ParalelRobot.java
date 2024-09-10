@@ -11,7 +11,7 @@ public class ParalelRobot extends Robot implements Runnable {
     public int[] actualPos = new int[2];
     public Stop stop;
     public boolean goIn4 = false;
-    public BayStop4 nearBay;
+    int takenPermits;
 
     public ParalelRobot(int Street, int Avenue, Direction direction, int beepers, Color color, int streetDest,
             int avenueDest, Stop stop) {
@@ -37,19 +37,15 @@ public class ParalelRobot extends Robot implements Runnable {
         while (ConcurrentKarel.totalBeepers != 0) {
             this.pick(); // Pick beeper and set random stop
             goToStop();
-            followDirections(this.stop.wayToPrincipal, ConcurrentKarel.principalAvenue, 0); // Go to principal avenue in
+            followDirections(this.stop.wayToPrincipal, ConcurrentKarel.principalPos[1],
+                    ConcurrentKarel.principalPos[0]); // Go to principal avenue in
             // avenue 10
             followDirections(ConcurrentKarel.wayBackToBeepers, 100000, 0); // Go from principal to beepers
         }
         this.stop = ConcurrentKarel.stopsArr[5]; // Parking stop
         goToStop();
-        System.out.println("LLEGADA AL PARKING");
         goTo(7, 12);
         goTo(4, 18);
-    }
-
-    void park() {
-
     }
 
     void calculateDirections() {
@@ -74,81 +70,15 @@ public class ParalelRobot extends Robot implements Runnable {
         this.calculateDirections();
         String nextPositionKey = this.actualPos[0] + "," + this.actualPos[1];
 
-        if (this.goIn4) {
-            c4Move(prevPost, nextPositionKey);
-        } else {
-            try {
-                ConcurrentKarel.positionSemaphores.get(nextPositionKey).acquire();
-                this.move();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                ConcurrentKarel.positionSemaphores.get(prevPost).release();
-            }
-        }
-        
-    }
-
-    public void c4Move(String prevPos, String nextPositionKey) {
-
-        String nBayPos = this.actualPos[0] + "," + this.actualPos[1];
-        switch (nBayPos) {
-            case "11,15":
-                this.nearBay = ConcurrentKarel.bayArr[0];
-                break;
-            case "15,15":
-                this.nearBay = ConcurrentKarel.bayArr[1];
-                break;
-            case "16,12":
-                this.nearBay = ConcurrentKarel.bayArr[2];
-                break;
-            case "12,18":
-                this.nearBay = ConcurrentKarel.bayArr[3];
-                break;
-
-            default:
-                break;
+        try {
+            ConcurrentKarel.positionSemaphores.get(nextPositionKey).acquire();
+            this.move();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            ConcurrentKarel.positionSemaphores.get(prevPost).release();
         }
 
-        if ((ConcurrentKarel.positionSemaphores.get(nextPositionKey).availablePermits() == 0)
-                && (ConcurrentKarel.positionSemaphores.get(prevPos).getQueueLength() > 0)) {
-            int i = 0;
-            String tempPrevPos = prevPos;
-            while (!((this.nearBay.pos[0] == this.actualPos[0]) && (this.nearBay.pos[1] == this.actualPos[1]))) {
-                String direction = this.nearBay.goToBay[i];
-                turnDirection(direction);
-                prevPos = this.actualPos[0] + "," + this.actualPos[1];
-                this.calculateDirections();
-                nextPositionKey = this.actualPos[0] + "," + this.actualPos[1];
-                while (this.frontIsClear()
-                        && !((this.nearBay.pos[0] == this.actualPos[0])
-                                && (this.nearBay.pos[1] == this.actualPos[1]))) {
-                    prevPos = this.actualPos[0] + "," + this.actualPos[1];
-                    this.calculateDirections();
-                    nextPositionKey = this.actualPos[0] + "," + this.actualPos[1];
-                    try {
-                        ConcurrentKarel.positionSemaphores.get(nextPositionKey).acquire();
-                        this.move();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        ConcurrentKarel.positionSemaphores.get(prevPos).release();
-                    }
-                }
-                i++;
-            }
-            // ConcurrentKarel.positionSemaphores.get(tempPrevPos).release();
-        } else {
-            try {
-                ConcurrentKarel.positionSemaphores.get(nextPositionKey).acquire();
-                this.move();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                ConcurrentKarel.positionSemaphores.get(prevPos).release();
-            }
-        }
-        System.out.println(this.nearBay.nBay);
     }
 
     public void turnDirection(String direction) {
@@ -176,7 +106,6 @@ public class ParalelRobot extends Robot implements Runnable {
         String nextPos = "";
         switch (nStop) {
             case 1:
-                System.out.println(this.actualPos[0] + "," + (int) (this.actualPos[1] + 1));
                 nextPos = this.actualPos[0] + "," + (int) (this.actualPos[1] + 1);
                 try {
                     if (ConcurrentKarel.positionStopSemaphores.get(nextPos).availablePermits() == 0) {
@@ -184,7 +113,8 @@ public class ParalelRobot extends Robot implements Runnable {
                     }
                 } catch (Exception e) {
                 }
-                ConcurrentKarel.positionStopSemaphores.get(nextPos).acquire();
+                this.stop.semaphoreEntrance.acquire();
+                this.stop.semaphoreExit.acquire();
                 break;
             case 2:
                 nextPos = this.actualPos[0] + "," + (int) (this.actualPos[1] - 1);
@@ -194,7 +124,8 @@ public class ParalelRobot extends Robot implements Runnable {
                     }
                 } catch (Exception e) {
                 }
-                ConcurrentKarel.positionStopSemaphores.get(nextPos).acquire();
+                this.stop.semaphoreEntrance.acquire();
+                this.stop.semaphoreExit.acquire();
                 break;
             case 3:
                 nextPos = this.actualPos[0] + "," + (int) (this.actualPos[1] + 1);
@@ -204,7 +135,7 @@ public class ParalelRobot extends Robot implements Runnable {
                     }
                 } catch (Exception e) {
                 }
-                ConcurrentKarel.positionStopSemaphores.get(nextPos).acquire();
+                this.stop.semaphoreEntrance.acquire();
                 break;
             case 4:
                 nextPos = this.actualPos[0] + "," + (int) (this.actualPos[1] - 1);
@@ -214,7 +145,7 @@ public class ParalelRobot extends Robot implements Runnable {
                     }
                 } catch (Exception e) {
                 }
-                ConcurrentKarel.positionStopSemaphores.get(nextPos).acquire();
+                this.stop.semaphoreEntrance.acquire();
                 break;
             default:
                 break;
@@ -226,10 +157,16 @@ public class ParalelRobot extends Robot implements Runnable {
         if (nStop != 0 && nStop != 5) {
             String nextPos = "";
             nextPos = this.actualPos[0] + "," + (this.actualPos[1]);
-            if (ConcurrentKarel.positionStopSemaphores.get(nextPos).availablePermits() == this.stop.maxRobots) {
-                this.notifyAll();
+            this.stop.cont++;
+            if (this.stop.cont == this.stop.maxRobots) {
+                ConcurrentKarel.positionStopSemaphores.get(nextPos).release(this.stop.maxRobots);
+                this.stop.cont = 0;
             }
-            ConcurrentKarel.positionStopSemaphores.get(nextPos).release();
+        
+            if (this.stop.nStop != 3 && this.stop.nStop != 4) {
+                this.stop.semaphoreEntrance.release(this.takenPermits);
+                this.stop.semaphoreExit.release();
+            }
         }
     }
 
@@ -286,20 +223,34 @@ public class ParalelRobot extends Robot implements Runnable {
         int nStop = this.stop.nStop;
         switch (nStop) {
             case 1:
-                goTo(17, 3);
-                goTo(16, 5);
-                goTo(18, 6);
+                try {
+                    this.stop.semaphoreExit.release();
+                    goTo(17, 3);
+                    goTo(16, 5);
+                    if (this.stop.semaphoreEntrance.availablePermits() > 0) {
+                        this.takenPermits = this.stop.semaphoreEntrance.drainPermits();   
+                    }
+                    this.stop.semaphoreExit.acquire();
+                    goTo(18, 6);
+                } catch (Exception e) {
+                }
                 break;
             case 2:
+            try {
+                this.stop.semaphoreExit.release();
                 goTo(10, 4);
                 goTo(11, 5);
                 goTo(12, 6);
+                if (this.stop.semaphoreEntrance.availablePermits() > 0) {
+                    this.takenPermits = this.stop.semaphoreEntrance.drainPermits();
+                }
+                this.stop.semaphoreExit.acquire();
                 goTo(10, 7);
+            } catch (Exception e) {} 
                 break;
             case 3:
                 goTo(6, 8);
                 break;
-
             default:
                 break;
         }
@@ -307,11 +258,11 @@ public class ParalelRobot extends Robot implements Runnable {
 
     void followDirections(String[] directions, int avenue, int street) {
         int i = 0;
-        while (!((avenue == this.actualPos[1])) && i < directions.length) {
+        while (!((avenue == this.actualPos[1]) && (street == this.actualPos[0])) && i < directions.length) {
             String direction = directions[i];
             turnDirection(direction);
             while (this.frontIsClear()
-                    && !((avenue == this.actualPos[1]))) {
+                    && !((avenue == this.actualPos[1]) && (street == this.actualPos[0]))) {
                 c_move();
             }
             i++;
@@ -364,11 +315,8 @@ public class ParalelRobot extends Robot implements Runnable {
         ConcurrentKarel.totalBeepers -= 1;
         Random rand = new Random();
         int r = rand.nextInt(1, 5);
-        // int r = 4;
+        // int r = 3;
         this.stop = ConcurrentKarel.stopsArr[r];
-        if (r == 4) {
-            this.nearBay = ConcurrentKarel.bayArr[0];
-        }
     }
 
     @Override
