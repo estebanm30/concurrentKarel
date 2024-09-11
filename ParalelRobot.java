@@ -10,7 +10,6 @@ public class ParalelRobot extends Robot implements Runnable {
     public int[] initialPos = new int[2];
     public int[] actualPos = new int[2];
     public Stop stop;
-    public boolean goIn4 = false;
     int takenPermits;
 
     public ParalelRobot(int Street, int Avenue, Direction direction, int beepers, Color color, int streetDest,
@@ -162,7 +161,7 @@ public class ParalelRobot extends Robot implements Runnable {
                 ConcurrentKarel.positionStopSemaphores.get(nextPos).release(this.stop.maxRobots);
                 this.stop.cont = 0;
             }
-        
+
             if (this.stop.nStop != 3 && this.stop.nStop != 4) {
                 this.stop.semaphoreEntrance.release(this.takenPermits);
                 this.stop.semaphoreExit.release();
@@ -200,23 +199,86 @@ public class ParalelRobot extends Robot implements Runnable {
     }
 
     public void routeStop4() {
-        goTo(11, 15);
-        this.goIn4 = true;
-        goTo(15, 11);
-        goTo(13, 15);
-        goTo(16, 17);
-        goTo(17, 12);
-        goTo(9, 18);
-        goTo(18, 19);
-        this.putBeeper();
-        this.goIn4 = false;
-        goTo(9, 19);
-        goTo(17, 18);
-        goTo(16, 12);
-        goTo(13, 17);
-        goTo(15, 15);
-        goTo(11, 11);
-        goTo(10, 15);
+        try {
+            if (ConcurrentKarel.bayArr[1].mySemaphore.availablePermits() == 0) {
+                // goTo(12, 15);
+                // this.wait();
+            }
+            ConcurrentKarel.bayArr[1].mySemaphore.acquire();
+            goTo(11, 15);
+            goTo(15, 11);
+            goTo(15, 15);
+            if (ConcurrentKarel.bayArr[2].mySemaphore.availablePermits() == 0) {
+                goTo(15, 16);
+                // this.wait();
+            } else {
+                ConcurrentKarel.bayArr[1].mySemaphore.release();
+            }
+            ConcurrentKarel.bayArr[2].mySemaphore.acquire();
+            goTo(13, 15);
+            // ConcurrentKarel.bayArr[1].mySemaphore.release();
+            goTo(16, 17);
+            goTo(16, 12);
+            if (ConcurrentKarel.bayArr[3].mySemaphore.availablePermits() == 0) {
+                goTo(16, 11);
+                // this.wait();
+            } else {
+                ConcurrentKarel.bayArr[2].mySemaphore.release();
+            }
+            ConcurrentKarel.bayArr[3].mySemaphore.acquire();
+            goTo(17, 12);
+            // ConcurrentKarel.bayArr[2].mySemaphore.release();
+            goTo(12, 18);
+            if (ConcurrentKarel.bayArr[4].mySemaphore.availablePermits() == 0) {
+                goTo(12, 17);
+                // this.wait();
+            } else {
+                ConcurrentKarel.bayArr[3].mySemaphore.release();
+            }
+            ConcurrentKarel.bayArr[4].mySemaphore.acquire();
+            goTo(9, 18);
+            // ConcurrentKarel.bayArr[3].mySemaphore.release();
+            goTo(18, 19);
+            this.putBeeper();
+            for (Bay bay : ConcurrentKarel.bayArr) {
+                if (bay.mySemaphore.availablePermits() > 0) {
+                    bay.mySemaphore.acquire();
+                    System.out.println(bay.nBay + "--------------------------------------------");
+                }
+            }
+            goTo(9, 19);
+            goTo(12, 18);
+            // if (ConcurrentKarel.bayArr[3].mySemaphore.availablePermits() == 0) {
+            // goTo(12, 17);
+            // // this.wait();
+            // }
+            // ConcurrentKarel.bayArr[3].mySemaphore.acquire();
+            goTo(17, 18);
+            ConcurrentKarel.bayArr[4].mySemaphore.release();
+            goTo(16, 12);
+            // if (ConcurrentKarel.bayArr[2].mySemaphore.availablePermits() == 0) {
+            // goTo(16, 11);
+            // // this.wait();
+            // }
+            // ConcurrentKarel.bayArr[2].mySemaphore.acquire();
+            ConcurrentKarel.bayArr[3].mySemaphore.release();
+            goTo(13, 17);
+            goTo(15, 15);
+            ConcurrentKarel.bayArr[2].mySemaphore.release();
+            // if (ConcurrentKarel.bayArr[1].mySemaphore.availablePermits() == 0) {
+            // goTo(15, 16);
+            // // this.wait();
+            // }
+            // ConcurrentKarel.bayArr[1].mySemaphore.acquire();
+            // ConcurrentKarel.bayArr[0].mySemaphore.acquire();
+            goTo(11, 11);
+            goTo(11, 15);
+            goTo(10, 15);
+            ConcurrentKarel.bayArr[1].mySemaphore.release();
+            ConcurrentKarel.bayArr[0].mySemaphore.release();
+        } catch (Exception e) {
+        }
+
     }
 
     void stopRoute() {
@@ -228,7 +290,7 @@ public class ParalelRobot extends Robot implements Runnable {
                     goTo(17, 3);
                     goTo(16, 5);
                     if (this.stop.semaphoreEntrance.availablePermits() > 0) {
-                        this.takenPermits = this.stop.semaphoreEntrance.drainPermits();   
+                        this.takenPermits = this.stop.semaphoreEntrance.drainPermits();
                     }
                     this.stop.semaphoreExit.acquire();
                     goTo(18, 6);
@@ -236,17 +298,18 @@ public class ParalelRobot extends Robot implements Runnable {
                 }
                 break;
             case 2:
-            try {
-                this.stop.semaphoreExit.release();
-                goTo(10, 4);
-                goTo(11, 5);
-                goTo(12, 6);
-                if (this.stop.semaphoreEntrance.availablePermits() > 0) {
-                    this.takenPermits = this.stop.semaphoreEntrance.drainPermits();
+                try {
+                    this.stop.semaphoreExit.release();
+                    goTo(10, 4);
+                    goTo(11, 5);
+                    goTo(12, 6);
+                    if (this.stop.semaphoreEntrance.availablePermits() > 0) {
+                        this.takenPermits = this.stop.semaphoreEntrance.drainPermits();
+                    }
+                    this.stop.semaphoreExit.acquire();
+                    goTo(10, 7);
+                } catch (Exception e) {
                 }
-                this.stop.semaphoreExit.acquire();
-                goTo(10, 7);
-            } catch (Exception e) {} 
                 break;
             case 3:
                 goTo(6, 8);
@@ -314,8 +377,8 @@ public class ParalelRobot extends Robot implements Runnable {
         this.pickBeeper();
         ConcurrentKarel.totalBeepers -= 1;
         Random rand = new Random();
-        int r = rand.nextInt(1, 5);
-        // int r = 3;
+        // int r = rand.nextInt(1, 5);
+        int r = 4;
         this.stop = ConcurrentKarel.stopsArr[r];
     }
 

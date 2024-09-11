@@ -42,7 +42,7 @@ public class Stop {
                 this.dropPos = new int[] { 8, 8 };
                 this.maxRobots = ConcurrentKarel.maxRobots4;
                 this.posSemaphoreEntrance = new int[] {10,15};
-                this.posSemaphoreExit = new int[]{8,8};
+                this.posSemaphoreExit = new int[]{15,15};
                 break;
 
             default:
