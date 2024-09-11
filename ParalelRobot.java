@@ -254,6 +254,10 @@ public class ParalelRobot extends Robot implements Runnable {
             // }
             // ConcurrentKarel.bayArr[3].mySemaphore.acquire();
             goTo(17, 18);
+            ConcurrentKarel.bayArr[3].mySemaphore.tryAcquire();
+            ConcurrentKarel.bayArr[2].mySemaphore.tryAcquire();
+            ConcurrentKarel.bayArr[1].mySemaphore.tryAcquire();
+            ConcurrentKarel.bayArr[0].mySemaphore.tryAcquire();
             ConcurrentKarel.bayArr[4].mySemaphore.release();
             goTo(16, 12);
             // if (ConcurrentKarel.bayArr[2].mySemaphore.availablePermits() == 0) {
@@ -261,9 +265,14 @@ public class ParalelRobot extends Robot implements Runnable {
             // // this.wait();
             // }
             // ConcurrentKarel.bayArr[2].mySemaphore.acquire();
+            ConcurrentKarel.bayArr[2].mySemaphore.tryAcquire();
+            ConcurrentKarel.bayArr[1].mySemaphore.tryAcquire();
+            ConcurrentKarel.bayArr[0].mySemaphore.tryAcquire();
             ConcurrentKarel.bayArr[3].mySemaphore.release();
             goTo(13, 17);
             goTo(15, 15);
+            ConcurrentKarel.bayArr[1].mySemaphore.tryAcquire();
+            ConcurrentKarel.bayArr[0].mySemaphore.tryAcquire();
             ConcurrentKarel.bayArr[2].mySemaphore.release();
             // if (ConcurrentKarel.bayArr[1].mySemaphore.availablePermits() == 0) {
             // goTo(15, 16);
@@ -377,8 +386,8 @@ public class ParalelRobot extends Robot implements Runnable {
         this.pickBeeper();
         ConcurrentKarel.totalBeepers -= 1;
         Random rand = new Random();
-        // int r = rand.nextInt(1, 5);
-        int r = 4;
+        int r = rand.nextInt(1, 5);
+        // int r = 4;
         this.stop = ConcurrentKarel.stopsArr[r];
     }
 

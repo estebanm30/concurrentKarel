@@ -20,7 +20,7 @@ public class ConcurrentKarel implements Directions {
   public static void main(String[] args) {
 
     /* Variables */
-    int numRobots = 4;
+    int numRobots = 13;
 
     createStops();
     createBays();
