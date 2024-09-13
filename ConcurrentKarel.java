@@ -1,18 +1,27 @@
 import kareltherobot.*;
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
-
-import java.util.*;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ConcurrentKarel implements Directions {
   public static int totalBeepers = 1000;
-  public static int[] maxRobots = new int[]{8,9,1,4}; // maxRobots stop1, stop2, stop3, stop4
-  public static int[] principalPos = new int[] { 10, 10 };
+  public static final int[] maxRobots = new int[] { 8, 9, 1, 4 }; // maxRobots stop1, stop2, stop3, stop4
+  public static final int[] principalPos = new int[] { 10, 10 };
   public static Stop[] stopsArr = new Stop[6];
   public static Bay bayArr[] = new Bay[5];
-  public static Map<String, Semaphore> positionSemaphores = Collections.synchronizedMap(new HashMap<>());
+  public static final Semaphore cMoveSemaphore = new Semaphore(1);
+  public static List<String> positionsUsed = Collections.synchronizedList(new ArrayList<>());
+  private static final Lock positionLock = new ReentrantLock();
+  private static final Condition positionAvailable = positionLock.newCondition();
   public static Map<String, Semaphore> positionStopSemaphores = Collections.synchronizedMap(new HashMap<>());
-  public static String[] wayBackToBeepers = { "North", "East", "North", "West", "South", "East", "North" };
+  public static final String[] wayBackToBeepers = { "North", "East", "North", "West", "South", "East", "North" };
 
   public static void main(String[] args) {
 
@@ -21,10 +30,10 @@ public class ConcurrentKarel implements Directions {
 
     /* Stops */
     createStops();
-    
+
     /* Create bays of stop 4 */
     createBays();
-    
+
     /* World Setup and robots creation */
     Thread[] arr = new Thread[2];
     arr = setUpWorld(numRobots);
@@ -34,6 +43,30 @@ public class ConcurrentKarel implements Directions {
       robot.start();
     }
 
+  }
+
+  public static void notifyPositionAvailable(String position) {
+    positionLock.lock();
+    try {
+      positionAvailable.signalAll(); // Notify waiting threads
+    } finally {
+      positionLock.unlock();
+    }
+  }
+
+  public static boolean waitForPosition(String position) {
+    positionLock.lock();
+    try {
+      while (positionsUsed.contains(position)) {
+        positionAvailable.await(); // Wait for position to be available
+      }
+      return true;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt(); // Restore interruption status
+      return false;
+    } finally {
+      positionLock.unlock();
+    }
   }
 
   public static void createStops() {
@@ -92,27 +125,26 @@ public class ConcurrentKarel implements Directions {
     bayArr[4] = b5;
   }
 
-  static void stopControlCreation(){
-   String key = ""; 
-   int j = 0;
-   for(int i = 1; i <= 4; i++){
-        key = stopsArr[i].posSemaphoreEntrance[0] + "," + stopsArr[i].posSemaphoreEntrance[1];
-        Semaphore semE = new Semaphore(maxRobots[j]);
-        stopsArr[i].semaphoreEntrance = semE;
-        ConcurrentKarel.positionStopSemaphores.put(key, semE); 
+  static void stopControlCreation() {
+    String key = "";
+    int j = 0;
+    for (int i = 1; i <= 4; i++) {
+      key = stopsArr[i].posSemaphoreEntrance[0] + "," + stopsArr[i].posSemaphoreEntrance[1];
+      Semaphore semE = new Semaphore(maxRobots[j]);
+      stopsArr[i].semaphoreEntrance = semE;
+      ConcurrentKarel.positionStopSemaphores.put(key, semE);
 
-        key = stopsArr[i].posSemaphoreExit[0] + "," + stopsArr[i].posSemaphoreExit[1];
-        Semaphore semEx = new Semaphore(1);
-        stopsArr[i].semaphoreExit = semEx;
-        ConcurrentKarel.positionStopSemaphores.put(key, semEx);
-        j++;
-   } 
+      key = stopsArr[i].posSemaphoreExit[0] + "," + stopsArr[i].posSemaphoreExit[1];
+      Semaphore semEx = new Semaphore(1);
+      stopsArr[i].semaphoreExit = semEx;
+      ConcurrentKarel.positionStopSemaphores.put(key, semEx);
+      j++;
+    }
   }
 
   static void createRobots(Thread[] threadsArr, int numRobots) {
     int currStreetPark = 7;
     int currAvenuePark = 12;
-    
 
     for (int i = 0; i < numRobots; i++) {
       if (currAvenuePark > 18) {
@@ -133,35 +165,28 @@ public class ConcurrentKarel implements Directions {
     World.readWorld("PracticaOperativos.kwld");
     World.setVisible(true);
 
-
     /*
-    TODO: Refactorizar el manejo de los semaforos
-    Idea 1: 
-     Tener un arreglo de las posiciones ocupadas por los robots
-     Cuando un robot se mueva pregunta si la siguiente posicion ya esta ocupada
-     Si esta ocupada entonces espera
-     Si no esta ocupada agrega esa posicion al arreglo y quita la posicion en la que estaba
-     Esta instruccion tiene que ser atomica (syncronized) 
-    Idea 2: 
-     El HashMap de los semaforos empieza vacio
-     Cuando los robots se mueven primero revisan si la posicion ya tiene un semaforo
-     Si no lo tiene, lo crea y lo adquiere
-     Si ya existe entonces solo lo adquiere
-     En cualquiera de los dos casos suelta el lock quetenia anteriorrmente
-    */
+     * TODO: Refactorizar el manejo de los semaforos
+     * Idea 1:
+     * Tener un arreglo de las posiciones ocupadas por los robots
+     * Cuando un robot se mueva pregunta si la siguiente posicion ya esta ocupada
+     * Si esta ocupada entonces espera
+     * Si no esta ocupada agrega esa posicion al arreglo y quita la posicion en la
+     * que estaba
+     * Esta instruccion tiene que ser atomica (syncronized)
+     * Idea 2:
+     * El HashMap de los semaforos empieza vacio
+     * Cuando los robots se mueven primero revisan si la posicion ya tiene un
+     * semaforo
+     * Si no lo tiene, lo crea y lo adquiere
+     * Si ya existe entonces solo lo adquiere
+     * En cualquiera de los dos casos suelta el lock quetenia anteriorrmente
+     */
 
-    String key = "";
-    for (int street = 1; street <= 20; street++) {
-      for (int avenue = 1; avenue <= 20; avenue++) {
-        key = street + "," + avenue;
-        ConcurrentKarel.positionSemaphores.put(key, new Semaphore(1)); 
-      }
-    }
-    
     stopControlCreation();
     Thread[] threadsArr = new Thread[numRobots];
     createRobots(threadsArr, numRobots);
-  
+
     return threadsArr;
 
   }

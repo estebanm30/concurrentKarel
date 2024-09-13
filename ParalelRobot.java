@@ -2,6 +2,7 @@ import kareltherobot.*;
 import java.awt.Color;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.Random;
 
 public class ParalelRobot extends Robot implements Runnable {
@@ -21,10 +22,14 @@ public class ParalelRobot extends Robot implements Runnable {
 
         String pos = this.actualPos[0] + "," + this.actualPos[1];
         try {
-            ConcurrentKarel.positionSemaphores.get(pos).acquire();
+            ConcurrentKarel.cMoveSemaphore.acquire();
+            ConcurrentKarel.positionsUsed.add(pos);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            ConcurrentKarel.cMoveSemaphore.release();
         }
+
     }
 
     void work() {
@@ -38,9 +43,9 @@ public class ParalelRobot extends Robot implements Runnable {
             followDirections(ConcurrentKarel.wayBackToBeepers, 100000, 0); // Go from principal to beepers
         }
         this.stop = ConcurrentKarel.stopsArr[5]; // Parking stop
-        goToStop(); //Go to parking stop
+        goToStop(); // Go to parking stop
         // Line up in parking
-        goTo(7, 12); 
+        goTo(7, 12);
         goTo(4, 18);
     }
 
@@ -52,22 +57,34 @@ public class ParalelRobot extends Robot implements Runnable {
         } else if (this.facingNorth()) {
             this.actualPos[0] += 1;
         } else if (this.facingSouth()) {
-            this.actualPos[0] -= 1;   
+            this.actualPos[0] -= 1;
         }
     }
 
     void cMove() {
+
         String actualPos = this.actualPos[0] + "," + this.actualPos[1];
         this.calculateDirections(); // calculates next direction, dosn't move
         String nextPositionKey = this.actualPos[0] + "," + this.actualPos[1];
 
         try {
-            ConcurrentKarel.positionSemaphores.get(nextPositionKey).acquire();
+            // Wait until the position is available
+            ConcurrentKarel.waitForPosition(nextPositionKey);
+
+            ConcurrentKarel.positionsUsed.add(nextPositionKey);
             this.move();
-        } catch (Exception e) {
+
+            // Use semaphore to handle concurrent move operations
+            ConcurrentKarel.cMoveSemaphore.acquire();
+            ConcurrentKarel.positionsUsed.remove(actualPos);
+
+            // Notify other threads that the position is now available
+            ConcurrentKarel.notifyPositionAvailable(nextPositionKey);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore interruption status
             e.printStackTrace();
         } finally {
-            ConcurrentKarel.positionSemaphores.get(actualPos).release();
+            ConcurrentKarel.cMoveSemaphore.release();
         }
 
     }
@@ -114,11 +131,12 @@ public class ParalelRobot extends Robot implements Runnable {
             if (ConcurrentKarel.positionStopSemaphores.get(nextPos).availablePermits() == 0) {
                 this.wait();
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         this.stop.semaphoreEntrance.acquire();
         if (this.stop.nStop != 3 && this.stop.nStop != 4) {
             this.stop.semaphoreExit.acquire();
-        } 
+        }
     }
 
     void leaveStop() {
@@ -137,9 +155,11 @@ public class ParalelRobot extends Robot implements Runnable {
             }
         }
     }
+
     void goToStop() {
         int i = 0;
-        while (!((this.stop.entrancePos[0] == this.actualPos[0]) && (this.stop.entrancePos[1] == this.actualPos[1]))) {
+        while (!((this.stop.entrancePos[0] == this.actualPos[0]) && (this.stop.entrancePos[1] == this.actualPos[1]))
+                && i < this.stop.directionList.length) {
             String direction = this.stop.directionList[i];
             turnDirection(direction);
             if (!this.frontIsClear()) {
