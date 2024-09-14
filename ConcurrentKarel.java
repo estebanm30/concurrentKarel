@@ -16,6 +16,7 @@ public class ConcurrentKarel implements Directions {
   public static final int[] principalPos = new int[] { 10, 10 };
   public static Stop[] stopsArr = new Stop[6];
   public static Bay bayArr[] = new Bay[5];
+  private static final int numRobots = 13;
   public static final Semaphore cMoveSemaphore = new Semaphore(1);
   public static List<String> positionsUsed = Collections.synchronizedList(new ArrayList<>());
   private static final Lock positionLock = new ReentrantLock();
@@ -24,9 +25,6 @@ public class ConcurrentKarel implements Directions {
   public static final String[] wayBackToBeepers = { "North", "East", "North", "West", "South", "East", "North" };
 
   public static void main(String[] args) {
-
-    /* Variables */
-    int numRobots = 13;
 
     /* Stops */
     createStops();
@@ -164,24 +162,6 @@ public class ConcurrentKarel implements Directions {
     World.showSpeedControl(true);
     World.readWorld("PracticaOperativos.kwld");
     World.setVisible(true);
-
-    /*
-     * TODO: Refactorizar el manejo de los semaforos
-     * Idea 1:
-     * Tener un arreglo de las posiciones ocupadas por los robots
-     * Cuando un robot se mueva pregunta si la siguiente posicion ya esta ocupada
-     * Si esta ocupada entonces espera
-     * Si no esta ocupada agrega esa posicion al arreglo y quita la posicion en la
-     * que estaba
-     * Esta instruccion tiene que ser atomica (syncronized)
-     * Idea 2:
-     * El HashMap de los semaforos empieza vacio
-     * Cuando los robots se mueven primero revisan si la posicion ya tiene un
-     * semaforo
-     * Si no lo tiene, lo crea y lo adquiere
-     * Si ya existe entonces solo lo adquiere
-     * En cualquiera de los dos casos suelta el lock quetenia anteriorrmente
-     */
 
     stopControlCreation();
     Thread[] threadsArr = new Thread[numRobots];

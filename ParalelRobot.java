@@ -185,6 +185,12 @@ public class ParalelRobot extends Robot implements Runnable {
 
     }
 
+    void askForBays(int baysBelow) {
+        for (int i = 0; i < baysBelow; i++) {
+            ConcurrentKarel.bayArr[i].mySemaphore.tryAcquire();
+        }
+    }
+
     public void routeStop4() {
         try {
             ConcurrentKarel.bayArr[1].mySemaphore.acquire();
@@ -217,33 +223,28 @@ public class ParalelRobot extends Robot implements Runnable {
             goTo(9, 18);
             goTo(18, 19);
             this.putBeeper();
+            int baysBelow = 4;
             // TODO: Hacer atomico el intento de coger los locks
-            for (Bay bay : ConcurrentKarel.bayArr) {
-                if (bay.mySemaphore.availablePermits() > 0) {
-                    bay.mySemaphore.acquire();
-                }
-            }
+            askForBays(baysBelow);
             goTo(9, 19);
             goTo(12, 18);
             goTo(17, 18);
-            ConcurrentKarel.bayArr[3].mySemaphore.tryAcquire();
-            ConcurrentKarel.bayArr[2].mySemaphore.tryAcquire();
-            ConcurrentKarel.bayArr[1].mySemaphore.tryAcquire();
-            ConcurrentKarel.bayArr[0].mySemaphore.tryAcquire();
+            baysBelow--;
+            askForBays(baysBelow);
             ConcurrentKarel.bayArr[4].mySemaphore.release();
             goTo(16, 12);
-            ConcurrentKarel.bayArr[2].mySemaphore.tryAcquire();
-            ConcurrentKarel.bayArr[1].mySemaphore.tryAcquire();
-            ConcurrentKarel.bayArr[0].mySemaphore.tryAcquire();
+            baysBelow--;
+            askForBays(baysBelow);
             ConcurrentKarel.bayArr[3].mySemaphore.release();
             goTo(13, 17);
             goTo(15, 15);
-            ConcurrentKarel.bayArr[1].mySemaphore.tryAcquire();
-            ConcurrentKarel.bayArr[0].mySemaphore.tryAcquire();
+            baysBelow--;
+            askForBays(baysBelow);
             ConcurrentKarel.bayArr[2].mySemaphore.release();
             goTo(11, 11);
             goTo(11, 15);
             goTo(10, 15);
+            baysBelow--;
             ConcurrentKarel.bayArr[1].mySemaphore.release();
             ConcurrentKarel.bayArr[0].mySemaphore.release();
         } catch (Exception e) {
