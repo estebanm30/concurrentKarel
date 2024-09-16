@@ -33,7 +33,7 @@ public class ConcurrentKarel implements Directions {
     createBays();
 
     /* World Setup and robots creation */
-    Thread[] arr = new Thread[2];
+    Thread[] arr = new Thread[numRobots];
     arr = setUpWorld(numRobots);
 
     /* Start robots */
@@ -47,6 +47,8 @@ public class ConcurrentKarel implements Directions {
     positionLock.lock();
     try {
       positionAvailable.signalAll(); // Notify waiting threads
+    } catch (Exception e) {
+      e.printStackTrace();
     } finally {
       positionLock.unlock();
     }
